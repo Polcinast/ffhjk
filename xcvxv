@@ -1,0 +1,108 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local CM_TO_PX = 37.8
+local widthPx = math.floor(8 * CM_TO_PX)
+local heightPx = math.floor(5 * CM_TO_PX)
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ToggleMenu"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, widthPx, 0, heightPx)
+frame.Position = UDim2.new(0.5, -widthPx/2, 0.5, -heightPx/2)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 3
+stroke.Color = Color3.fromRGB(255, 255, 255)
+stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+stroke.Parent = frame
+
+local dragging = false
+local dragInput, mousePos, framePos
+
+frame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+frame.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		local delta = input.Position - mousePos
+		frame.Position = UDim2.new(
+			framePos.X.Scale,
+			framePos.X.Offset + delta.X,
+			framePos.Y.Scale,
+			framePos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+local function createRow(y, text)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1, -20, 0, 60)
+	row.Position = UDim2.new(0, 10, 0, y)
+	row.BackgroundTransparency = 1
+	row.Parent = frame
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.7, 0, 1, 0)
+	label.Position = UDim2.new(0, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.Text = text
+	label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 22
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = row
+
+	local toggle = Instance.new("TextButton")
+	toggle.Size = UDim2.new(0, 40, 0, 40)
+	toggle.Position = UDim2.new(1, -50, 0.5, -20)
+	toggle.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+	toggle.BorderSizePixel = 0
+	toggle.Text = ""
+	toggle.AutoButtonColor = false
+	toggle.Parent = row
+
+	local tgCorner = Instance.new("UICorner")
+	tgCorner.CornerRadius = UDim.new(0, 6)
+	tgCorner.Parent = toggle
+
+	local on = false
+	toggle.MouseButton1Click:Connect(function()
+		on = not on
+		local color = on and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
+		TweenService:Create(toggle, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {BackgroundColor3 = color}):Play()
+	end)
+end
+
+createRow(30, "Freeze Trade")
+createRow(100, "Force Accept")
